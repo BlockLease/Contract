@@ -9,23 +9,22 @@ contract RollingRent {
   address landlord;
   address tenant;
 
-  uint lastRentBlock;
-  uint rentBlockRate;
-
-  // The cents value of 2592000 seconds (30 days) worth of rent
+  // The cents value of rentPeriod seconds worth of rent
   uint rentPrice = 165000;
   // February 20, 2018 00:00+00
   uint rentStartTime = 1519084800;
   // 60 * 60 * 24 * 30 = 2592000 seconds = 30 days
   uint rentPeriod = 2592000;
 
+  // Number of rent periods that have been collected by the landlord
   uint periodsPaidOut = 0;
 
+  // Bailout flags for terminating the contract
   bool landlordBailout = false;
   bool tenantBailout = false;
 
   /**
-   * A rolling rent system where rent is paid a total of 2 months in advance
+   * A rolling rent system where rent is paid in advance into the contract
    **/
   function RollingRent() {
     owner = msg.sender;
@@ -39,7 +38,11 @@ contract RollingRent {
   function collectRent() {
     assertContractEnabled();
     require(msg.sender == landlord);
-    // Rent can be collected anytime after the beginning of the month
+    /**
+     * Rent can be collected anytime after the beginning of the month
+     * Rent can be left in the contract indefinitely and then retrieved using
+     * multiple collectRent() calls in a row
+     **/
     require(block.timestamp > periodsPaidOut * rentPeriod + rentStartTime);
     // Rent is sent to the landlord address
     landlord.transfer(rentEthValue());
@@ -66,7 +69,7 @@ contract RollingRent {
   }
 
   /**
-   * Send all money to owner address and prevent subsequant deposits
+   * Send all money to owner address and prevent subsequent deposits
    *
    * Must be called by landlord _and_ tenant in two separate transactions
    *
