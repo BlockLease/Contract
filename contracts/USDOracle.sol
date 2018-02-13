@@ -1,4 +1,4 @@
-pragma solidity ^0.4.4;
+pragma solidity ^0.4.19;
 
 import "./oraclizeAPI_0.4.sol";
 
