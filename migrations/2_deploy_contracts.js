@@ -1,9 +1,14 @@
 'use strict';
 
-const RollingRent = artifacts.require('./RollingRent.sol');
-const USDOracle = artifacts.require('./USDOracle.sol');
+const RollingRent = artifacts.require('RollingRent.sol');
+const USDOracle = artifacts.require('USDOracle.sol');
+
+const landlord = '0xb180cF51649691Db7864bB9f01B06ACf383Fb356';
+const tenant = '0xddeC6C333538fCD3de7cfB56D6beed7Fd8dEE604';
 
 module.exports = function(deployer) {
-  deployer.deploy(USDOracle);
-  deployer.deploy(RollingRent);
+  return deployer.deploy(USDOracle)
+    .then(() => {
+      return deployer.deploy(RollingRent, USDOracle.address, landlord, tenant);
+    });
 };

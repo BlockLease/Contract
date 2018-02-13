@@ -13,7 +13,7 @@ contract USDOracle is usingOraclize {
     update();
   }
 
-  function () payable { }
+  function () payable public { }
 
   function getPrice() constant returns (uint) {
     return price;

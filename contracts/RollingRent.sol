@@ -1,6 +1,6 @@
 pragma solidity ^0.4.4;
 
-import './USDOracle.sol';
+import "./USDOracle.sol";
 
 contract RollingRent {
 
@@ -8,13 +8,17 @@ contract RollingRent {
 
   address landlord;
   address tenant;
+  address usdOracle;
 
   // The cents value of rentPeriod seconds worth of rent
   uint rentPrice = 165000;
   // February 20, 2018 00:00+00
-  uint rentStartTime = 1519084800;
+  /* uint rentStartTime = 1519084800; */
   // 60 * 60 * 24 * 30 = 2592000 seconds = 30 days
-  uint rentPeriod = 2592000;
+  /* uint rentPeriod = 2592000; */
+
+  uint rentStartTime = 1518514829;
+  uint rentPeriod = 86400;
 
   // Number of rent periods that have been collected by the landlord
   uint periodsPaidOut = 0;
@@ -26,8 +30,11 @@ contract RollingRent {
   /**
    * A rolling rent system where rent is paid in advance into the contract
    **/
-  function RollingRent() {
+  function RollingRent(address _usdOracle, address _landlord, address _tenant) {
     owner = msg.sender;
+    usdOracle = _usdOracle;
+    landlord = _landlord;
+    tenant = _tenant;
   }
 
   /**
@@ -65,7 +72,7 @@ contract RollingRent {
    * The USDOracle contract should be updated whenever rent is being operated on.
    **/
   function rentEthValue() returns (uint) {
-    return rentPrice / USDOracle.getPrice();
+    return rentPrice / USDOracle(usdOracle).getPrice();
   }
 
   /**
