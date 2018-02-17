@@ -1,31 +1,32 @@
 pragma solidity ^0.4.19;
 
-import "./USDOracle.sol";
+interface USDOracle {
+  function getPrice() external constant returns (uint);
+}
 
 contract RollingRent {
 
   address owner;
 
-  address landlord;
-  address tenant;
-  address usdOracle;
+  address public landlord;
+  address public tenant;
+  address public usdOracle;
 
   // The cents value of rentPeriod seconds worth of rent
-  uint rentPrice = 165000;
+  uint public rentPrice = 165000;
   // February 20, 2018 00:00+00
   /* uint rentStartTime = 1519084800; */
   // 60 * 60 * 24 * 30 = 2592000 seconds = 30 days
   /* uint rentPeriod = 2592000; */
 
-  uint rentStartTime = 1518514829;
-  uint rentPeriod = 86400;
+  uint public rentStartTime = 1518858300;
+  uint public rentPeriod = 86400;
 
-  // Number of rent periods that have been collected by the landlord
-  uint periodsPaidOut = 0;
+  uint256 public landlordBalance = 0;
 
   // Bailout flags for terminating the contract
-  bool landlordBailout = false;
-  bool tenantBailout = false;
+  bool public landlordBailout = false;
+  bool public tenantBailout = false;
 
   /**
    * A rolling rent system where rent is paid in advance into the contract
@@ -45,24 +46,24 @@ contract RollingRent {
   function collectRent() {
     assertContractEnabled();
     require(msg.sender == landlord);
-    /**
-     * Rent can be collected anytime after the beginning of the month
-     * Rent can be left in the contract indefinitely and then retrieved using
-     * multiple collectRent() calls in a row
-     **/
-    require(block.timestamp > periodsPaidOut * rentPeriod + rentStartTime);
-    // Rent is sent to the landlord address
-    landlord.transfer(rentEthValue());
-    periodsPaidOut++;
+
+    require(landlordBalance > 1**9);
+    landlord.transfer(landlordBalance);
+    landlordBalance = 0;
+  }
+
+  function contractBalance() constant returns (uint256) {
+    return this.balance - landlordBalance;
   }
 
   /**
    * Called by the tenant, money is stored in the smart contract
    **/
-  function payRent() payable {
+  function () payable {
     assertContractEnabled();
     require(msg.sender == tenant);
-    require(msg.value >= rentEthValue());
+    require(contractBalance() + msg.value > rentWeiValue());
+    landlordBalance += rentWeiValue();
   }
 
   /**
@@ -71,8 +72,8 @@ contract RollingRent {
    *
    * The USDOracle contract should be updated whenever rent is being operated on.
    **/
-  function rentEthValue() returns (uint) {
-    return rentPrice / USDOracle(usdOracle).getPrice();
+  function rentWeiValue() constant returns (uint256) {
+    return 10**18 / USDOracle(usdOracle).getPrice() * rentPrice;
   }
 
   /**
@@ -101,13 +102,14 @@ contract RollingRent {
    * Throw if bailout conditions are true
    **/
   function assertContractEnabled() {
+    require(block.timestamp > rentStartTime);
     require(contractEnabled());
   }
 
   /**
    * Check if either bailout condition is true
    **/
-  function contractEnabled() returns (bool) {
+  function contractEnabled() constant returns (bool) {
     return (tenantBailout == false && landlordBailout == false);
   }
 
