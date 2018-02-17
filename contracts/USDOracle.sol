@@ -7,7 +7,7 @@ contract USDOracle is usingOraclize {
   // Price in cents as returned by the gdax api
   // GDAX is an fdic insured US based exchange
   // https://www.gdax.com/trade/ETH-USD
-  uint price;
+  uint256 price;
 
   function USDOracle() {
     update();
@@ -15,7 +15,7 @@ contract USDOracle is usingOraclize {
 
   function () payable public { }
 
-  function getPrice() constant returns (uint) {
+  function getPrice() constant returns (uint256) {
     return price;
   }
 
