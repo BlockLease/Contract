@@ -8,10 +8,10 @@ const tenant = '0xddeC6C333538fCD3de7cfB56D6beed7Fd8dEE604';
 module.exports = async function(deployer) {
   await deployer.deploy(
     Lease,
-    '0x4159466da2e1caa9a4151fd9cf232c6Dd940372A', // usd oracle
+    '0xd15c88e2c2ca6756e4fdb73b75a1d5443f6c096d', // usd oracle
     landlord,
     tenant,
-    (Date.now() / 1000) + (60 * 60),
+    (Date.now() / 1000) + (60 * 30),
     60 * 60 * 4,
     1500,
     6

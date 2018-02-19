@@ -2,8 +2,8 @@ pragma solidity ^0.4.19;
 
 interface USDOracle {
   function getPrice() external constant returns (uint);
-  function priceNeedsUpdate() external returns (bool);
-  function usdToWei(uint usd) external returns (uint256);
+  function priceNeedsUpdate() external constant returns (bool);
+  function usdToWei(uint usd) external constant returns (uint256);
 }
 
 contract Lease {
@@ -63,6 +63,11 @@ contract Lease {
     startTime = _startTime;
     cycleTime = _cycleTime;
     minCycleCount = _minCycleCount;
+  }
+
+  function () payable public {
+    assertSigned();
+    require(msg.sender == tenant);
   }
 
   function assertSigned() internal constant { require(signed()); }
@@ -152,7 +157,7 @@ contract Lease {
    *
    * The USDOracle contract should be updated whenever rent is being operated on.
    **/
-  function rentWeiValue() public returns (uint256) {
+  function rentWeiValue() public constant returns (uint256) {
     // USDOracle must have been updated recently
     require(!USDOracle(usdOracle).priceNeedsUpdate());
     return USDOracle(usdOracle).usdToWei(cyclePriceUsd);
