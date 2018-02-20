@@ -18,30 +18,66 @@ contract Lease {
    **/
   address public usdOracle;
 
+  /**
+   * Landlord and tenant wallet addresses.
+   *
+   * These should _not_ be exchange addresses.
+   **/
   address public landlord;
   address public tenant;
 
+  /**
+   * Time the contract goes into effect in epoch time.
+   **/
   uint public startTime;
+
+  /**
+   * Seconds per payment cycle. Determines how often funds are released to
+   * landlord.
+   **/
   uint public cycleTime;
+
+  /**
+   * The US Dollar value that should be paid to the landlord each month.
+   */
   uint public cyclePriceUsd;
 
+  /**
+   * The balance owed to the landlord in wei.
+   **/
   uint256 public landlordBalance = 0;
+
+  /**
+   * The number of payment cycle that have been credited to `landlordBalance`.
+   **/
   uint public landlordCyclesPaid = 0;
 
+  /**
+   * The minimum number of cycles that must have passed before `terminate` can
+   * be called.
+   **/
   uint public minCycleCount;
 
   /**
-   * Signatures for activation of contract
+   * Signatures for activation of contract.
    **/
   mapping(address => bool) public signatures;
 
   /**
-   * Signatures for agreement about contract termination
+   * Signatures for agreement about contract destruction.
    **/
   mapping(address => bool) public destroySignatures;
 
   /**
-   * A rolling rent system where rent is paid in advance into the contract
+   * Create a lease agreement between a landowner and a tenant.
+   *
+   * Rent is credited to the landlord wallet at the `startTime` and after every
+   * `cycleTime` seconds.
+   *
+   * Rent is converted from USD to Ethereum using the `usdOracle` supplied.
+   *
+   * The usdOracle must have been updated within the last hour for most
+   * operations.
    **/
   function Lease(
     address _usdOracle,
@@ -65,17 +101,37 @@ contract Lease {
     minCycleCount = _minCycleCount;
   }
 
+  /**
+   * Collateral may be supplied here.
+   **/
   function () payable public {
     assertSigned();
     require(msg.sender == tenant);
   }
 
-  function assertSigned() internal constant { require(signed()); }
+  /**
+   * Helper to ensure both parties have signed.
+   *
+   * If the contract has failed signature and the 'startTime' has passed
+   * then selfdestruct.
+   **/
+  function assertSigned() internal constant {
+    bool _signed = signed();
+    require(_signed);
+  }
 
+  /**
+   * Whether landlord and tenant have signed.
+   **/
   function signed() constant public returns (bool) {
     return (signatures[landlord] && signatures[tenant]);
   }
 
+  /**
+   * Sign the contract.
+   *
+   * This must before called `startTime`.
+   **/
   function sign() public {
     require(msg.sender == landlord || msg.sender == tenant);
     signatures[msg.sender] = true;
@@ -101,7 +157,7 @@ contract Lease {
   }
 
   /**
-   * Update the landlord balance based on the current cycle
+   * Update the landlord balance based on the current cycle.
    **/
   function updateLandlordBalance() public {
     require(msg.sender == landlord || msg.sender == tenant);
@@ -112,9 +168,9 @@ contract Lease {
 
   /**
    * Called by landlord, this will send the available landlord balance to the
-   * landlord address
+   * landlord address.
    *
-   * It can be called to collect all outstanding rent belonging to the landlord
+   * It can be called to collect all outstanding rent belonging to the landlord.
    **/
   function receiveRent() public {
     assertSigned();
