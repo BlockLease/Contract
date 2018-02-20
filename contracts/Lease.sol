@@ -280,4 +280,16 @@ contract Lease {
       selfdestruct(tenant);
     }
   }
+
+  /**
+   * Convenenience accessors to avoid interacting with the `signatures` mapping
+   * outside of solidity.
+   **/
+  function tenantSigned() public constant returns (bool) {
+    return signatures[tenant];
+  }
+
+  function landlordSigned() public constant returns (bool) {
+    return signatures[landlord];
+  }
 }
