@@ -102,11 +102,34 @@ contract Lease {
   }
 
   /**
-   * Collateral may be supplied here.
+   * Sign the contract.
+   *
+   * This must be called before `startTime`.
+   **/
+  function sign() public {
+    require(msg.sender == landlord || msg.sender == tenant);
+    selfdestructIfNecessary();
+    signatures[msg.sender] = true;
+  }
+
+  /**
+   * Collateral and rent may be supplied here.
    **/
   function () payable public {
-    assertSigned();
+    selfdestructIfNecessary();
     require(msg.sender == tenant);
+  }
+
+  /**
+   * If the `startTime` passes and the contract has not been signed by both the
+   * landlord and the tenant then selfdestruct send money to tenant.
+   *
+   * The tenant is the only one capable of sending money into the contract.
+   **/
+  function selfdestructIfNecessary() public {
+    if (block.timestamp > startTime && !signed()) {
+      selfdestruct(tenant);
+    }
   }
 
   /**
@@ -116,8 +139,7 @@ contract Lease {
    * then selfdestruct.
    **/
   function assertSigned() internal constant {
-    bool _signed = signed();
-    require(_signed);
+    require(signed());
   }
 
   /**
@@ -125,16 +147,6 @@ contract Lease {
    **/
   function signed() constant public returns (bool) {
     return (signatures[landlord] && signatures[tenant]);
-  }
-
-  /**
-   * Sign the contract.
-   *
-   * This must before called `startTime`.
-   **/
-  function sign() public {
-    require(msg.sender == landlord || msg.sender == tenant);
-    signatures[msg.sender] = true;
   }
 
   /**
@@ -173,6 +185,7 @@ contract Lease {
    * It can be called to collect all outstanding rent belonging to the landlord.
    **/
   function receiveRent() public {
+    selfdestructIfNecessary();
     assertSigned();
     require(msg.sender == landlord);
     updateLandlordBalance();
@@ -190,6 +203,7 @@ contract Lease {
    * Called by the tenant, money is stored in the smart contract
    **/
   function payRent() public payable {
+    selfdestructIfNecessary();
     assertSigned();
     require(msg.sender == tenant);
     require(msg.value >= rentOwed());
@@ -227,8 +241,9 @@ contract Lease {
    * At least 1 cycle of notification must be supplied to the landlord
    **/
   function terminate() public {
+    selfdestructIfNecessary();
     assertSigned();
-    require(leaseCycle() > minCycleCount);
+    require(leaseCycle() >= minCycleCount - 1);
     require(msg.sender == tenant);
     updateLandlordBalance();
     require(this.balance >= landlordBalance + rentWeiValue());
@@ -239,7 +254,7 @@ contract Lease {
     landlordBalance = 0;
     landlord.transfer(balance);
     // Send any other balance to the tenant as a refund
-    tenant.transfer(this.balance);
+    selfdestruct(tenant);
   }
 
   /**
@@ -252,6 +267,7 @@ contract Lease {
    * to functions will fail when either of the bailout flags are true.
    **/
   function destroy() public {
+    selfdestructIfNecessary();
     assertSigned();
     require(msg.sender == landlord || msg.sender == tenant);
     destroySignatures[msg.sender] = true;
