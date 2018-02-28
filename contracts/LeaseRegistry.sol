@@ -7,16 +7,35 @@ interface Lease {
 
 contract LeaseRegistry {
 
+  /**
+   * An array of lease contracts addresses in order of date created
+   **/
   address[] public leases;
+
+  /**
+   * A mapping of lease addresses to booleans indicating whether they exist
+   *
+   * TODO: Change this to store integer index of the lease in the leases array
+   **/
   mapping (address => bool) public registeredLeases;
 
+  /**
+   * A list of operators that can call operator functions
+   **/
   mapping (address => bool) public operators;
 
+  /**
+   * Operator modifier to restrict user access
+   **/
   modifier operator {
     require(operators[msg.sender]);
     _;
   }
 
+  /**
+   * Constructor
+   * Add contract creator as first operator
+   **/
   function LeaseRegistry() public {
     operators[msg.sender] = true;
   }
