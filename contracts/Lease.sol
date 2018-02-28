@@ -1,9 +1,9 @@
 pragma solidity ^0.4.19;
 
 interface USDOracle {
-  function getPrice() external constant returns (uint);
-  function priceNeedsUpdate() external constant returns (bool);
-  function usdToWei(uint usd) external constant returns (uint256);
+  function getPrice() public constant returns (uint);
+  function usdToWei(uint usd) public constant returns (uint);
+  function priceNeedsUpdate() public constant returns (bool);
 }
 
 contract Lease {
@@ -27,11 +27,6 @@ contract Lease {
   address public tenant;
 
   /**
-   * Time the contract goes into effect in epoch time.
-   **/
-  uint public startTime;
-
-  /**
    * Seconds per payment cycle. Determines how often funds are released to
    * landlord.
    **/
@@ -43,20 +38,21 @@ contract Lease {
   uint public cyclePriceUsd;
 
   /**
-   * The balance owed to the landlord in wei.
-   **/
-  uint256 public landlordBalance = 0;
-
-  /**
-   * The number of payment cycle that have been credited to `landlordBalance`.
-   **/
-  uint public landlordCyclesPaid = 0;
-
-  /**
    * The minimum number of cycles that must have passed before `terminate` can
    * be called.
    **/
   uint public minCycleCount;
+
+  /**
+   * The balance owed to the landlord in wei.
+   **/
+  uint public landlordBalance;
+  uint public tenantBalance;
+
+  /**
+   * The number of payment cycle that have been credited to `landlordBalance`.
+   **/
+  uint public landlordCyclesPaid;
 
   /**
    * Signatures for activation of contract.
@@ -67,6 +63,9 @@ contract Lease {
    * Signatures for agreement about contract destruction.
    **/
   mapping(address => bool) public destroySignatures;
+
+  string public descriptionAddress;
+  string[] public imageAddresses;
 
   /**
    * Create a lease agreement between a landowner and a tenant.
@@ -82,8 +81,6 @@ contract Lease {
   function Lease(
     address _usdOracle,
     address _landlord,
-    address _tenant,
-    uint _startTime,
     uint _cycleTime,
     uint _cyclePriceUsd,
     uint _minCycleCount
@@ -94,9 +91,7 @@ contract Lease {
     require(_cycleTime > 60 * 60 * 1);
     usdOracle = _usdOracle;
     landlord = _landlord;
-    tenant = _tenant;
     cyclePriceUsd = _cyclePriceUsd;
-    startTime = _startTime;
     cycleTime = _cycleTime;
     minCycleCount = _minCycleCount;
   }
